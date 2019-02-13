@@ -1,0 +1,27 @@
+{
+  "name": "cordova-plugin-mosambee-pos",
+  "version": "0.0.1",
+  "description": "Cordova plugin to interact with Mosambee portable POS",
+  "cordova": {
+    "id": "cordova-plugin-mosambee-pos",
+    "platforms": [
+      "android"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArunYogi/cordova-plugin-mosambee-pos.git"
+  },
+  "keywords": [
+    "mosambee",
+    "mosambee pos",
+    "pos",
+    "cordova"
+  ],
+  "author": "Arun Yokesh Kumar",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ArunYogi/cordova-plugin-mosambee-pos/issues"
+  },
+  "homepage": "https://github.com/ArunYogi/cordova-plugin-mosambee-pos#readme"
+}

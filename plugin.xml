@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-mosambee-pos" version="0.0.1" 
+    xmlns="http://apache.org/cordova/ns/plugins/1.0" 
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>Mosambee POS</name>
+    <author>Arun Yokesh Kumar</author>
+    <description>Cordova plugin to interact with Mosambee portable POS</description>
+    <license>ISC</license>
+    <js-module src="www/mosambee-pos.js" name="MosambeePOS">
+        <clobbers target="window.cordova.plugins.MosambeePOS" />
+    </js-module>
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="MosambeePOSService">
+                <param name="android-package" value="com.mosambee.cordova.MosambeePOSService" />
+                <param name="onload" value="true"/>
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="AndroidManifest.xml">
+            <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+        </config-file>
+        <source-file src="src/android/com/mosambee/cordova/MosambeePOSService.java" target-dir="src/com/mosambee/cordova"/>
+        <source-file src="src/android/com/mosambee/cordova/Utils.java" target-dir="src/com/mosambee/cordova"/>
+        <source-file src="src/android/com/mosambee/cordova/serial/FileWrite.java" target-dir="src/com/mosambee/cordova/serial"/>
+        <source-file src="src/android/com/mosambee/cordova/serial/SerialPortIOManage.java" target-dir="src/com/mosambee/cordova/serial"/>
+        <source-file src="src/android/com/mosambee/cordova/serial/SerialPortService.java" target-dir="src/com/mosambee/cordova/serial"/>
+        <source-file src="src/android/com/mosambee/cordova/android_serialport_api/SerialPortDevice.java" target-dir="src/com/mosambee/cordova/android_serialport_api"/>
+        <lib-file src="src/android/lib/mosambeelib_v1.0.0.073.jar"/>
+        <lib-file src="src/android/lib/printersdk.jar"/>
+    </platform>
+</plugin>
