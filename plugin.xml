@@ -5,7 +5,7 @@
     <name>Mosambee POS</name>
     <author>Arun Yokesh Kumar</author>
     <description>Cordova plugin to interact with Mosambee portable POS</description>
-    <license>ISC</license>
+    <license>Apache 2.0</license>
     <js-module src="www/mosambee-pos.js" name="MosambeePOS">
         <clobbers target="window.cordova.plugins.MosambeePOS" />
     </js-module>
