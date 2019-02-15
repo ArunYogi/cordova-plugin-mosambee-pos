@@ -39,13 +39,13 @@
         <lib-file src="src/android/lib/mosambeelib_v1.0.0.066.jar"/>
         <lib-file src="src/android/lib/printersdk.jar"/>
         
-        <resource-file src="src/android/libs/armeabi-v7a/libdsp_serial_port.so" target="jniLibs/armeabi-v7a/libdsp_serial_port.so"/>
-        <resource-file src="src/android/libs/armeabi-v7a/libserial_port.so" target="jniLibs/armeabi-v7a/libserial_port.so"/>
-        <resource-file src="src/android/libs/armeabi-v7a/libserial_port1.so" target="jniLibs/armeabi-v7a/libserial_port1.so"/>
-        <resource-file src="src/android/libs/armeabi-v7a/libvudroid.so" target="jniLibs/armeabi-v7a/libvudroid.so"/>
+        <resource-file src="src/android/lib/armeabi-v7a/libdsp_serial_port.so" target="jniLibs/armeabi-v7a/libdsp_serial_port.so"/>
+        <resource-file src="src/android/lib/armeabi-v7a/libserial_port.so" target="jniLibs/armeabi-v7a/libserial_port.so"/>
+        <resource-file src="src/android/lib/armeabi-v7a/libserial_port1.so" target="jniLibs/armeabi-v7a/libserial_port1.so"/>
+        <resource-file src="src/android/lib/armeabi-v7a/libvudroid.so" target="jniLibs/armeabi-v7a/libvudroid.so"/>
 
-        <resource-file src="src/android/libs/x86/libserial_port.so" target="jniLibs/x86/libserial_port.so"/>
-        <resource-file src="src/android/libs/x86/libserial_port1.so" target="jniLibs/x86/libserial_port1.so"/>
-        <resource-file src="src/android/libs/x86/libvudroid.so" target="jniLibs/x86/libvudroid.so"/>
+        <resource-file src="src/android/lib/x86/libserial_port.so" target="jniLibs/x86/libserial_port.so"/>
+        <resource-file src="src/android/lib/x86/libserial_port1.so" target="jniLibs/x86/libserial_port1.so"/>
+        <resource-file src="src/android/lib/x86/libvudroid.so" target="jniLibs/x86/libvudroid.so"/>
     </platform>
 </plugin>
