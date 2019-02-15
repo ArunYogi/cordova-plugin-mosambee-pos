@@ -25,7 +25,27 @@
         <source-file src="src/android/com/mosambee/cordova/serial/SerialPortIOManage.java" target-dir="src/com/mosambee/cordova/serial"/>
         <source-file src="src/android/com/mosambee/cordova/serial/SerialPortService.java" target-dir="src/com/mosambee/cordova/serial"/>
         <source-file src="src/android/com/mosambee/cordova/android_serialport_api/SerialPortDevice.java" target-dir="src/com/mosambee/cordova/android_serialport_api"/>
-        <lib-file src="src/android/lib/mosambeelib_v1.0.0.073.jar"/>
+
+        <source-file src="src/android/com/mosambee/cordova/cordova/DownloadUtils.java" target-dir="src/com/mosambee/cordova/cordova"/>
+        <source-file src="src/android/com/mosambee/cordova/cordova/EConstants.java" target-dir="src/com/mosambee/cordova/cordova"/>
+        <source-file src="src/android/com/mosambee/cordova/cordova/EDownloadUtils.java" target-dir="src/com/mosambee/cordova/cordova"/>
+        <source-file src="src/android/com/mosambee/cordova/cordova/EResponse.java" target-dir="src/com/mosambee/cordova/cordova"/>
+        <source-file src="src/android/com/mosambee/cordova/cordova/EUtils.java" target-dir="src/com/mosambee/cordova/cordova"/>
+        <source-file src="src/android/com/mosambee/cordova/cordova/MosambeeUtils.java" target-dir="src/com/mosambee/cordova/cordova"/>
+        <source-file src="src/android/com/mosambee/cordova/cordova/PaymentActivity.java" target-dir="src/com/mosambee/cordova/cordova"/>
+        <source-file src="src/android/com/mosambee/cordova/cordova/PaymentPlugin.java" target-dir="src/com/mosambee/cordova/cordova"/>
+        <source-file src="src/android/com/mosambee/cordova/cordova/TransactionDetails.java" target-dir="src/com/mosambee/cordova/cordova"/>
+        
+        <lib-file src="src/android/lib/mosambeelib_v1.0.0.066.jar"/>
         <lib-file src="src/android/lib/printersdk.jar"/>
+        
+        <resource-file src="src/android/libs/armeabi-v7a/libdsp_serial_port.so" target="jniLibs/armeabi-v7a/libdsp_serial_port.so"/>
+        <resource-file src="src/android/libs/armeabi-v7a/libserial_port.so" target="jniLibs/armeabi-v7a/libserial_port.so"/>
+        <resource-file src="src/android/libs/armeabi-v7a/libserial_port1.so" target="jniLibs/armeabi-v7a/libserial_port1.so"/>
+        <resource-file src="src/android/libs/armeabi-v7a/libvudroid.so" target="jniLibs/armeabi-v7a/libvudroid.so"/>
+
+        <resource-file src="src/android/libs/x86/libserial_port.so" target="jniLibs/x86/libserial_port.so"/>
+        <resource-file src="src/android/libs/x86/libserial_port1.so" target="jniLibs/x86/libserial_port1.so"/>
+        <resource-file src="src/android/libs/x86/libvudroid.so" target="jniLibs/x86/libvudroid.so"/>
     </platform>
 </plugin>
