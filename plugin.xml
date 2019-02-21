@@ -33,7 +33,6 @@
         <source-file src="src/android/com/mosambee/cordova/cordova/EUtils.java" target-dir="src/com/mosambee/cordova/cordova"/>
         <source-file src="src/android/com/mosambee/cordova/cordova/MosambeeUtils.java" target-dir="src/com/mosambee/cordova/cordova"/>
         <source-file src="src/android/com/mosambee/cordova/cordova/PaymentActivity.java" target-dir="src/com/mosambee/cordova/cordova"/>
-        <source-file src="src/android/com/mosambee/cordova/cordova/PaymentPlugin.java" target-dir="src/com/mosambee/cordova/cordova"/>
         <source-file src="src/android/com/mosambee/cordova/cordova/TransactionDetails.java" target-dir="src/com/mosambee/cordova/cordova"/>
         
         <lib-file src="src/android/lib/mosambeelib_v1.0.0.066.jar"/>

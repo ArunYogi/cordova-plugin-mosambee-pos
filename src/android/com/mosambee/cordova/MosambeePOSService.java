@@ -13,11 +13,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
 
+import com.mosambee.cordova.cordova.MosambeeUtils;
 import com.mosambee.cordova.serial.SerialPortIOManage;
 import com.mosambee.cordova.serial.SerialPortService;
 import com.mosambee.lib.TRACE;
 import com.printer.sdk.PrinterConstants;
 import com.printer.sdk.PrinterInstance;
+import com.printer.sdk.Barcode;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -25,8 +27,10 @@ import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
+import java.util.Date;
 
 public class MosambeePOSService extends CordovaPlugin {
     private Intent intent;
@@ -39,7 +43,9 @@ public class MosambeePOSService extends CordovaPlugin {
     private int baudrate;
     private MyBroadcastReceiver myReceiver;
     private static final String TAG = "Mosambee";
-    private CallbackContext printerConnectCB;
+    private CallbackContext printerConnectCB = null;
+    private CallbackContext paymentCallbackContext = null;
+    private MosambeeUtils mosutils;
 
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
@@ -63,9 +69,11 @@ public class MosambeePOSService extends CordovaPlugin {
 
         if (action.equals("closePort")) {
             try {
-
                 Toast.makeText(cordova.getActivity(), "closePort", Toast.LENGTH_LONG).show();
-
+                if (this.myPrinter != null) {
+                    this.myPrinter.closeConnection();
+                    this.myPrinter = null;
+                }
                 intent = new Intent();
                 intent.putExtra("openPort", false);
                 intent.putExtra("deviceType", "Both");
@@ -97,9 +105,26 @@ public class MosambeePOSService extends CordovaPlugin {
                 callbackContext.error("Failed to parse parameters");
             }
             return true;
+        } else if (action.equals("printBarcode")) {
+            try {
+                Toast.makeText(cordova.getActivity(), "printBarcode", Toast.LENGTH_LONG).show();
+                String printer_content = args.getString(0);
+                printBarcode(printer_content, callbackContext);
+            } catch (JSONException e) {
+                callbackContext.error("Failed to parse parameters");
+            }
+            return true;
+        } else if (action.equals("printQRcode")) {
+            try {
+                Toast.makeText(cordova.getActivity(), "printQRcode", Toast.LENGTH_LONG).show();
+                String printer_content = args.getString(0);
+                printQRcode(printer_content, callbackContext);
+            } catch (JSONException e) {
+                callbackContext.error("Failed to parse parameters");
+            }
+            return true;
         } else if (action.equals("startScanner")) {
             try {
-
                 Toast.makeText(cordova.getActivity(), "startScanner", Toast.LENGTH_LONG).show();
                 intent = new Intent();
                 intent.putExtra("openPort", true);
@@ -130,14 +155,108 @@ public class MosambeePOSService extends CordovaPlugin {
                         "Connection to scanner failed." + er.getMessage(), Toast.LENGTH_SHORT).show();
             }
             return true;
+        } else if (action.equals("startPayment")) {
+            mosutils = new MosambeeUtils();
+            Date now = new Date();
+            this.paymentCallbackContext = callbackContext;
+            cordova.setActivityResultCallback(MosambeePOSService.this);
+            try {
+                JSONObject msgObject = args.getJSONObject(0);
+                int amount = 0;
+                boolean enableTips = false;
+                boolean enableLogin = false;
+                String invoiceNumber = "";
+                String customer_email = "";
+                String mer_ref1 = "";
+                String mer_ref2 = "";
+                String invoiceDate = now.toString();
+                String comm_mode = "BT";
+                try {
+                    amount = msgObject.getInt("amount");
+                } catch (JSONException exp) {
+                }
+                try {
+                    enableTips = msgObject.getBoolean("enableTips");
+                } catch (JSONException exp) {
+                }
+                try {
+                    invoiceNumber = msgObject.getString("invoiceNumber");
+                } catch (JSONException exp) {
+                }
+                try {
+                    enableLogin = msgObject.getBoolean("enableTips");
+                } catch (JSONException exp) {
+                }
+                try {
+                    customer_email = msgObject.getString("customer_email");
+                } catch (JSONException exp) {
+                }
+                try {
+                    mer_ref1 = msgObject.getString("merchant_ref1");
+                } catch (JSONException exp) {
+                }
+                try {
+                    mer_ref2 = msgObject.getString("merchant_ref2");
+                } catch (JSONException exp) {
+                }
+                try {
+                    invoiceDate = msgObject.getString("invoiceDate");
+                } catch (JSONException exp) {
+                }
+                try {
+                    comm_mode = msgObject.getString("communicationMode");
+                } catch (JSONException exp) {
+                }
+                mosutils.startPayment(cordova.getActivity(), "Sale", amount, enableTips, "8424834651",
+                        cordova.getActivity(), "", "9167545444", invoiceNumber, 200, enableLogin, customer_email,
+                        mer_ref1, mer_ref2, "1234", invoiceDate, comm_mode);
+            } catch (JSONException exp) {
+                this.paymentCallbackContext.error("Issue in parsing options");
+            }
+            return true;
+        }
+        return true;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Toast.makeText(cordova.getActivity(), "result", Toast.LENGTH_LONG).show();
+        Log.d(TAG, "ResultCode=" + resultCode + "\nrequestCode " + requestCode);
+        Log.d(TAG, "----------" + data);
+
+        if (data == null) {
+            paymentCallbackContext.error("Fail.");
+            return;
+        }
+        String response = data.getStringExtra("response");
+        paymentCallbackContext.success(response);
+        Log.d(TAG, "=====response" + response);
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray jsonArray = new JSONArray(jsonObject.getString("history"));
+            for (int i = 0, n = jsonArray.length(); i < n; i++) {
+                JSONArray historyItem = new JSONArray(jsonArray.get(i).toString());
+                Log.d(TAG, "History single item array" + historyItem);
+                for (int j = 0; j < historyItem.length(); j++) {
+                    Log.d(TAG, "history item : " + historyItem.get(j));
+                }
+            }
+        } catch (JSONException e) {
+
+            e.printStackTrace();
         }
 
-        return true;
     }
 
     @Override
     public void onDestroy() {
         synchronized (this) {
+            try {
+                cordova.getActivity().unregisterReceiver(myReceiver);
+            } catch (Exception exp) {
+                Log.e(TAG, "Issue in unregistering port scanner");
+            }
         }
     }
     // Monochromatic image pass to printImage()
@@ -155,6 +274,58 @@ public class MosambeePOSService extends CordovaPlugin {
         Log.d(TAG, "Open connection Status of printer " + b);
         if (b && this.myPrinter != null && this.myPrinter.getCurrentStatus() == 0) {
             this.myPrinter.printText(text);
+            callback.success("success");
+        } else {
+            Toast.makeText(cordova.getActivity().getApplicationContext(), "Connection to printer failed.",
+                    Toast.LENGTH_SHORT).show();
+            callback.error("printer connection failed");
+        }
+    }
+
+    public void printBarcode(String text, CallbackContext callback) {
+        Log.d(TAG, "Printing text in mosambee printer");
+        devicesName = "Serial device";
+        String com_baudrate = "115200";
+        baudrate = Integer.parseInt(com_baudrate);
+        if (this.myPrinter == null) {
+            this.myPrinter = PrinterInstance.getPrinterInstance(new File(this.devicesAddress), baudrate, 0, mHandler);
+        }
+        Log.d(TAG, "myPrinter.getCurrentStatus()-" + myPrinter.getCurrentStatus());
+        boolean b = this.myPrinter.openConnection();
+        Log.d(TAG, "Open connection Status of printer " + b);
+        if (b && this.myPrinter != null && this.myPrinter.getCurrentStatus() == 0) {
+            Barcode barcode = new Barcode(PrinterConstants.BarcodeType.CODE128, 2, 150, 0, text);
+            myPrinter.printBarCode(barcode);
+            myPrinter.setPrinter(PrinterConstants.Command.PRINT_AND_WAKE_PAPER_BY_LINE, 1);
+            callback.success("success");
+        } else {
+            Toast.makeText(cordova.getActivity().getApplicationContext(), "Connection to printer failed.",
+                    Toast.LENGTH_SHORT).show();
+            callback.error("printer connection failed");
+        }
+
+    }
+
+    public void printQRcode(String text, CallbackContext callback) {
+        Log.d(TAG, "Printing text in mosambee printer");
+        devicesName = "Serial device";
+        String com_baudrate = "115200";
+        baudrate = Integer.parseInt(com_baudrate);
+        if (this.myPrinter == null) {
+            this.myPrinter = PrinterInstance.getPrinterInstance(new File(this.devicesAddress), baudrate, 0, mHandler);
+        }
+        Log.d(TAG, "myPrinter.getCurrentStatus()-" + myPrinter.getCurrentStatus());
+        boolean b = this.myPrinter.openConnection();
+        Log.d(TAG, "Open connection Status of printer " + b);
+        if (b && this.myPrinter != null && this.myPrinter.getCurrentStatus() == 0) {
+            Barcode qrcode = new Barcode(PrinterConstants.BarcodeType.QRCODE, 0, 3, 8, text);
+            try {
+                myPrinter.printBarCode(qrcode);
+                myPrinter.setPrinter(PrinterConstants.Command.PRINT_AND_WAKE_PAPER_BY_LINE, 1);
+            } catch (Exception exp) {
+                Toast.makeText(cordova.getActivity().getApplicationContext(), "Issue in printing QRCode for " + text,
+                        Toast.LENGTH_SHORT).show();
+            }
             callback.success("success");
         } else {
             Toast.makeText(cordova.getActivity().getApplicationContext(), "Connection to printer failed.",
