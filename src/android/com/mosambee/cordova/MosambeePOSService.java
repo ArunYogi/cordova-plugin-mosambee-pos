@@ -47,6 +47,10 @@ public class MosambeePOSService extends CordovaPlugin {
     private CallbackContext paymentCallbackContext = null;
     private MosambeeUtils mosutils;
 
+    private String appKey = "";
+    private String userId = null;
+    private String password = null;
+
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
         myReceiver = new MyBroadcastReceiver();
@@ -66,7 +70,6 @@ public class MosambeePOSService extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-
         if (action.equals("closePort")) {
             try {
                 Toast.makeText(cordova.getActivity(), "closePort", Toast.LENGTH_LONG).show();
@@ -79,12 +82,19 @@ public class MosambeePOSService extends CordovaPlugin {
                 intent.putExtra("deviceType", "Both");
                 intent.setClassName("com.mosambee.printService", "com.mosambee.printService.PrinterService");
                 cordova.getActivity().startService(intent);
-
                 String responseText = "Hello world, " + args.getString(0);
                 callbackContext.success(responseText);
             } catch (JSONException e) {
                 callbackContext.error("Failed to parse parameters");
             }
+            return true;
+        } else if (action.equals("setCredential")) {
+            Toast.makeText(cordova.getActivity(), "setCredential", Toast.LENGTH_LONG).show();
+            this.userId = args.getString(0);
+            this.password = args.getString(1);
+            this.appKey = args.getString(2);
+
+            callbackContext.success("Success");
             return true;
         } else if (action.equals("connectToPrinter")) {
             Toast.makeText(cordova.getActivity(), "connectToPrinter", Toast.LENGTH_LONG).show();
@@ -140,16 +150,13 @@ public class MosambeePOSService extends CordovaPlugin {
             return true;
         } else if (action.equals("stopScanner")) {
             try {
-
                 Toast.makeText(cordova.getActivity(), "stopScanner", Toast.LENGTH_LONG).show();
-
                 Log.d(TAG, "-----------in closeTheSerialPort");
                 handler.removeMessages(1000);
                 handler.removeMessages(1001);
                 handler.removeMessages(999);
                 SerialPortIOManage.getInstance().disConnect();
                 Log.d(TAG, "-----------in closeTheSerialPort");
-
             } catch (NoSuchMethodError | Exception er) {
                 Toast.makeText(cordova.getActivity().getApplicationContext(),
                         "Connection to scanner failed." + er.getMessage(), Toast.LENGTH_SHORT).show();
@@ -167,6 +174,7 @@ public class MosambeePOSService extends CordovaPlugin {
                 boolean enableLogin = false;
                 String invoiceNumber = "";
                 String customer_email = "";
+                String customer_phone = "";
                 String mer_ref1 = "";
                 String mer_ref2 = "";
                 String invoiceDate = now.toString();
@@ -184,11 +192,15 @@ public class MosambeePOSService extends CordovaPlugin {
                 } catch (JSONException exp) {
                 }
                 try {
-                    enableLogin = msgObject.getBoolean("enableTips");
+                    enableLogin = msgObject.getBoolean("enableLogin");
                 } catch (JSONException exp) {
                 }
                 try {
                     customer_email = msgObject.getString("customer_email");
+                } catch (JSONException exp) {
+                }
+                try {
+                    customer_phone = msgObject.getString("customer_phone");
                 } catch (JSONException exp) {
                 }
                 try {
@@ -207,13 +219,16 @@ public class MosambeePOSService extends CordovaPlugin {
                     comm_mode = msgObject.getString("communicationMode");
                 } catch (JSONException exp) {
                 }
-                mosutils.startPayment(cordova.getActivity(), "Sale", amount, enableTips, "8424834651",
-                        cordova.getActivity(), "", "9167545444", invoiceNumber, 200, enableLogin, customer_email,
-                        mer_ref1, mer_ref2, "1234", invoiceDate, comm_mode);
+                mosutils.startPayment(cordova.getActivity(), "Sale", amount, enableTips, customer_phone,
+                        cordova.getActivity(), this.appKey, this.userId, invoiceNumber, 200, enableLogin,
+                        customer_email, mer_ref1, mer_ref2, this.password, invoiceDate, comm_mode);
             } catch (JSONException exp) {
                 this.paymentCallbackContext.error("Issue in parsing options");
             }
             return true;
+        } else if (action.equals("voidTransaction")) {
+            Toast.makeText(cordova.getActivity(), "voidTransaction", Toast.LENGTH_LONG).show();
+            callbackContext.error("Not implemented yet");
         }
         return true;
     }
@@ -221,30 +236,30 @@ public class MosambeePOSService extends CordovaPlugin {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Toast.makeText(cordova.getActivity(), "result", Toast.LENGTH_LONG).show();
+        // Toast.makeText(cordova.getActivity(), "Got result for payment transaction",
+        // Toast.LENGTH_LONG).show();
         Log.d(TAG, "ResultCode=" + resultCode + "\nrequestCode " + requestCode);
         Log.d(TAG, "----------" + data);
 
         if (data == null) {
-            paymentCallbackContext.error("Fail.");
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("result", "failed");
+                jsonObject.put("resultcode", resultCode);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            paymentCallbackContext.error(jsonObject);
             return;
         }
         String response = data.getStringExtra("response");
-        paymentCallbackContext.success(response);
         Log.d(TAG, "=====response" + response);
         try {
             JSONObject jsonObject = new JSONObject(response);
-            JSONArray jsonArray = new JSONArray(jsonObject.getString("history"));
-            for (int i = 0, n = jsonArray.length(); i < n; i++) {
-                JSONArray historyItem = new JSONArray(jsonArray.get(i).toString());
-                Log.d(TAG, "History single item array" + historyItem);
-                for (int j = 0; j < historyItem.length(); j++) {
-                    Log.d(TAG, "history item : " + historyItem.get(j));
-                }
-            }
+            paymentCallbackContext.success(jsonObject);
         } catch (JSONException e) {
-
             e.printStackTrace();
+            paymentCallbackContext.success(response);
         }
 
     }
@@ -254,6 +269,10 @@ public class MosambeePOSService extends CordovaPlugin {
         synchronized (this) {
             try {
                 cordova.getActivity().unregisterReceiver(myReceiver);
+                if (this.myPrinter != null) {
+                    this.myPrinter.closeConnection();
+                }
+                SerialPortIOManage.getInstance().disConnect();
             } catch (Exception exp) {
                 Log.e(TAG, "Issue in unregistering port scanner");
             }
