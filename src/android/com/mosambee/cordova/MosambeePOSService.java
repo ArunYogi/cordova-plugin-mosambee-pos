@@ -13,6 +13,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
 
+import com.mosambee.cordova.cordova.EUtils;
 import com.mosambee.cordova.cordova.MosambeeUtils;
 import com.mosambee.cordova.serial.SerialPortIOManage;
 import com.mosambee.cordova.serial.SerialPortService;
@@ -72,7 +73,6 @@ public class MosambeePOSService extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if (action.equals("closePort")) {
             try {
-                Toast.makeText(cordova.getActivity(), "closePort", Toast.LENGTH_LONG).show();
                 if (this.myPrinter != null) {
                     this.myPrinter.closeConnection();
                     this.myPrinter = null;
@@ -89,7 +89,6 @@ public class MosambeePOSService extends CordovaPlugin {
             }
             return true;
         } else if (action.equals("setCredential")) {
-            Toast.makeText(cordova.getActivity(), "setCredential", Toast.LENGTH_LONG).show();
             this.userId = args.getString(0);
             this.password = args.getString(1);
             this.appKey = args.getString(2);
@@ -97,8 +96,6 @@ public class MosambeePOSService extends CordovaPlugin {
             callbackContext.success("Success");
             return true;
         } else if (action.equals("connectToPrinter")) {
-            Toast.makeText(cordova.getActivity(), "connectToPrinter", Toast.LENGTH_LONG).show();
-
             intent = new Intent();
             intent.putExtra("openPort", true);
             intent.putExtra("deviceType", "Printer");
@@ -108,7 +105,6 @@ public class MosambeePOSService extends CordovaPlugin {
             return true;
         } else if (action.equals("printText")) {
             try {
-                Toast.makeText(cordova.getActivity(), "printText", Toast.LENGTH_LONG).show();
                 String printer_content = args.getString(0);
                 printText(printer_content, callbackContext);
             } catch (JSONException e) {
@@ -117,7 +113,6 @@ public class MosambeePOSService extends CordovaPlugin {
             return true;
         } else if (action.equals("printBarcode")) {
             try {
-                Toast.makeText(cordova.getActivity(), "printBarcode", Toast.LENGTH_LONG).show();
                 String printer_content = args.getString(0);
                 printBarcode(printer_content, callbackContext);
             } catch (JSONException e) {
@@ -126,7 +121,6 @@ public class MosambeePOSService extends CordovaPlugin {
             return true;
         } else if (action.equals("printQRcode")) {
             try {
-                Toast.makeText(cordova.getActivity(), "printQRcode", Toast.LENGTH_LONG).show();
                 String printer_content = args.getString(0);
                 printQRcode(printer_content, callbackContext);
             } catch (JSONException e) {
@@ -135,7 +129,6 @@ public class MosambeePOSService extends CordovaPlugin {
             return true;
         } else if (action.equals("startScanner")) {
             try {
-                Toast.makeText(cordova.getActivity(), "startScanner", Toast.LENGTH_LONG).show();
                 intent = new Intent();
                 intent.putExtra("openPort", true);
                 intent.putExtra("deviceType", "Scanner");
@@ -150,7 +143,6 @@ public class MosambeePOSService extends CordovaPlugin {
             return true;
         } else if (action.equals("stopScanner")) {
             try {
-                Toast.makeText(cordova.getActivity(), "stopScanner", Toast.LENGTH_LONG).show();
                 Log.d(TAG, "-----------in closeTheSerialPort");
                 handler.removeMessages(1000);
                 handler.removeMessages(1001);
@@ -223,12 +215,24 @@ public class MosambeePOSService extends CordovaPlugin {
                         cordova.getActivity(), this.appKey, this.userId, invoiceNumber, 200, enableLogin,
                         customer_email, mer_ref1, mer_ref2, this.password, invoiceDate, comm_mode);
             } catch (JSONException exp) {
-                this.paymentCallbackContext.error("Issue in parsing options");
+                callbackContext.error("Issue in parsing options");
+                this.paymentCallbackContext = null;
             }
             return true;
         } else if (action.equals("voidTransaction")) {
             Toast.makeText(cordova.getActivity(), "voidTransaction", Toast.LENGTH_LONG).show();
-            callbackContext.error("Not implemented yet");
+            this.paymentCallbackContext = callbackContext;
+            cordova.setActivityResultCallback(MosambeePOSService.this);
+            try {
+                long txnId = args.getLong(0);
+                boolean enableLogin = args.getBoolean(1);
+                EUtils eutils = new EUtils();
+                eutils.startVoidTransaction(txnId, cordova.getActivity(), this.appKey, this.userId, 201, enableLogin);
+            } catch (JSONException exp) {
+                Log.e(TAG, "Issue in void transaction ", exp);
+                callbackContext.error("Issue in parsing options");
+                this.paymentCallbackContext = null;
+            }
         }
         return true;
     }
@@ -315,7 +319,7 @@ public class MosambeePOSService extends CordovaPlugin {
         if (b && this.myPrinter != null && this.myPrinter.getCurrentStatus() == 0) {
             Barcode barcode = new Barcode(PrinterConstants.BarcodeType.CODE128, 2, 150, 0, text);
             myPrinter.printBarCode(barcode);
-            myPrinter.setPrinter(PrinterConstants.Command.PRINT_AND_WAKE_PAPER_BY_LINE, 1);
+            myPrinter.setPrinter(PrinterConstants.Command.PRINT_AND_WAKE_PAPER_BY_LINE, 2);
             callback.success("success");
         } else {
             Toast.makeText(cordova.getActivity().getApplicationContext(), "Connection to printer failed.",
@@ -340,7 +344,7 @@ public class MosambeePOSService extends CordovaPlugin {
             Barcode qrcode = new Barcode(PrinterConstants.BarcodeType.QRCODE, 0, 3, 8, text);
             try {
                 myPrinter.printBarCode(qrcode);
-                myPrinter.setPrinter(PrinterConstants.Command.PRINT_AND_WAKE_PAPER_BY_LINE, 1);
+                myPrinter.setPrinter(PrinterConstants.Command.PRINT_AND_WAKE_PAPER_BY_LINE, 2);
             } catch (Exception exp) {
                 Toast.makeText(cordova.getActivity().getApplicationContext(), "Issue in printing QRCode for " + text,
                         Toast.LENGTH_SHORT).show();
@@ -349,7 +353,7 @@ public class MosambeePOSService extends CordovaPlugin {
         } else {
             Toast.makeText(cordova.getActivity().getApplicationContext(), "Connection to printer failed.",
                     Toast.LENGTH_SHORT).show();
-            callback.error("printer connection failed");
+            callback.error("Connection failed");
         }
 
     }
@@ -434,55 +438,57 @@ public class MosambeePOSService extends CordovaPlugin {
         public void onReceive(Context context, Intent intent) {
             TRACE.i("===== onReceive in mosambee");
             Log.d("Mosambee", "received broadcast message with action " + intent.getAction());
+            if (intent != null) {
+                Bundle bundle = intent.getExtras();
+                String deviceType = bundle.getString("deviceType");
+                int deviceState = bundle.getInt("deviceState");
+                int deviceOpen1 = bundle.getInt("deviceOpen1");
+                int deviceOpen2 = bundle.getInt("deviceOpen2");
 
-            Bundle bundle = intent.getExtras();
-            String deviceType = bundle.getString("deviceType");
-            int deviceState = bundle.getInt("deviceState");
-            int deviceOpen1 = bundle.getInt("deviceOpen1");
-            int deviceOpen2 = bundle.getInt("deviceOpen2");
+                if (deviceType != null) {
+                    switch (deviceType) {
+                    case "Printer":
+                        if (deviceState == 0 && deviceOpen1 == 0 && deviceOpen2 == 0) {
+                            Toast.makeText(cordova.getActivity().getApplicationContext(),
+                                    "" + deviceType + "\ndeviceState: " + deviceState + "\ndeviceOpen1: " + deviceOpen1
+                                            + "\ndeviceOpen2: " + deviceOpen2,
+                                    Toast.LENGTH_LONG).show();
+                            if (printerConnectCB != null && !printerConnectCB.isFinished()) {
+                                printerConnectCB.success("Connected successfully");
+                            }
+                        } else {
+                            Toast.makeText(cordova.getActivity().getApplicationContext(),
+                                    "" + deviceType + " connection failed.", Toast.LENGTH_LONG).show();
+                            if (printerConnectCB != null && !printerConnectCB.isFinished()) {
+                                printerConnectCB.error("Connection failed");
+                            }
+                        }
+                        break;
+                    case "Scanner":
+                        if (deviceState == 0 && deviceOpen1 == 0) {
+                            goForScanner();
+                            Toast.makeText(cordova.getActivity().getApplicationContext(),
+                                    "" + deviceType + "\ndeviceState: " + deviceState + "\ndeviceOpen1: " + deviceOpen1,
+                                    Toast.LENGTH_LONG).show();
 
-            assert deviceType != null;
-            switch (deviceType) {
-            case "Printer":
-                if (deviceState == 0 && deviceOpen1 == 0 && deviceOpen2 == 0) {
-                    Toast.makeText(
-                            cordova.getActivity().getApplicationContext(), "" + deviceType + "\ndeviceState: "
-                                    + deviceState + "\ndeviceOpen1: " + deviceOpen1 + "\ndeviceOpen2: " + deviceOpen2,
-                            Toast.LENGTH_LONG).show();
-                    if (printerConnectCB != null && !printerConnectCB.isFinished()) {
-                        printerConnectCB.success("Connected successfully");
+                        } else {
+                            Toast.makeText(cordova.getActivity().getApplicationContext(), "" + deviceType + "\n else",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    case "Both":
+                        if (deviceState == 0 && deviceOpen1 == 0 && deviceOpen2 == 0) {
+                            Toast.makeText(cordova.getActivity().getApplicationContext(),
+                                    "" + deviceType + "\ndeviceState: " + deviceState + "\ndeviceOpen1: " + deviceOpen1
+                                            + "\ndeviceOpen2: " + deviceOpen2,
+                                    Toast.LENGTH_LONG).show();
+
+                        } else {
+                            Toast.makeText(cordova.getActivity().getApplicationContext(), "" + deviceType + "\n else",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                        break;
                     }
-                } else {
-                    Toast.makeText(cordova.getActivity().getApplicationContext(), "" + deviceType + "\n else",
-                            Toast.LENGTH_LONG).show();
-                    if (printerConnectCB != null && !printerConnectCB.isFinished()) {
-                        printerConnectCB.error("Connection failed");
-                    }
                 }
-                break;
-            case "Scanner":
-                if (deviceState == 0 && deviceOpen1 == 0) {
-                    goForScanner();
-                    Toast.makeText(cordova.getActivity().getApplicationContext(),
-                            "" + deviceType + "\ndeviceState: " + deviceState + "\ndeviceOpen1: " + deviceOpen1,
-                            Toast.LENGTH_LONG).show();
-
-                } else {
-                    Toast.makeText(cordova.getActivity().getApplicationContext(), "" + deviceType + "\n else",
-                            Toast.LENGTH_LONG).show();
-                }
-            case "Both":
-                if (deviceState == 0 && deviceOpen1 == 0 && deviceOpen2 == 0) {
-                    Toast.makeText(
-                            cordova.getActivity().getApplicationContext(), "" + deviceType + "\ndeviceState: "
-                                    + deviceState + "\ndeviceOpen1: " + deviceOpen1 + "\ndeviceOpen2: " + deviceOpen2,
-                            Toast.LENGTH_LONG).show();
-
-                } else {
-                    Toast.makeText(cordova.getActivity().getApplicationContext(), "" + deviceType + "\n else",
-                            Toast.LENGTH_LONG).show();
-                }
-                break;
             }
         }
 
